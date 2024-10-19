@@ -287,7 +287,7 @@ const createOffer = async () => {
           <br></br>
           <Button variant="contained"
               color="primary"
-              disabled={peerConnection}
+              
               onClick={createOffer} >Join Video Call </Button>
           
            
