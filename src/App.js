@@ -84,6 +84,7 @@ function App() {
       setPlayMatch(true);
       setRoomId(roomId);
       setActiveRooms(activeRooms);
+      initializePeerConnection();
 
     });
 
@@ -193,7 +194,7 @@ function App() {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
         localVideoRef.current.srcObject = stream;
         stream.getTracks().forEach(track => pc.addTrack(track, stream));
-        setTimeout(() => createOffer(), 5000);
+        
 
         pc.onicecandidate = (event) => {
             if (event.candidate) {
@@ -287,7 +288,9 @@ const createOffer = async () => {
           <Button variant="contained"
               color="primary"
               disabled={peerConnection}
-              onClick={initializePeerConnection} >Initialize Connection to Join</Button>
+              onClick={createOffer} >Join Video Call </Button>
+          
+           
          
           <Button variant="contained"
               color="primary"
