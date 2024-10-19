@@ -143,12 +143,16 @@ function App() {
 
   }, []);
   
-  const startRecording = () => {
-    const stream = localVideoRef.current.srcObject;
-    if (!stream) {
-      console.error('No video stream available');
-      return;
-    }
+ const startRecording = async () => {
+  try {
+    // Request access to the entire screen.
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      video: true,
+      audio: true, // Optional: Include audio if needed.
+    });
+
+    // Assign the stream to the video element for preview
+    localVideoRef.current.srcObject = stream;
 
     const recorder = new MediaRecorder(stream);
     mediaRecorderRef.current = recorder;
@@ -167,21 +171,28 @@ function App() {
       document.body.appendChild(a);
       a.style = 'display: none';
       a.href = url;
-      a.download = 'recording.webm';
+      a.download = 'screen-recording.webm';
       a.click();
       window.URL.revokeObjectURL(url);
+
+      // Stop all tracks after recording
+      stream.getTracks().forEach(track => track.stop());
     };
 
     recorder.start();
     setIsRecording(true);
-  };
-  
-  const stopRecording = () => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
-  };
+  } catch (error) {
+    console.error('Error starting screen recording:', error);
+  }
+};
+
+const stopRecording = () => {
+  if (mediaRecorderRef.current) {
+    mediaRecorderRef.current.stop();
+    setIsRecording(false);
+  }
+};
+
   
   const initializePeerConnection = async () => {
     try {
