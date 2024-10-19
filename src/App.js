@@ -9,8 +9,6 @@ import HomePage from './HomePage';
 import GameComponent from './GameComponent';
 import Button from '@mui/material/Button';
 import CallIcon from '@mui/icons-material/Call';
-import RecordRTC from 'recordrtc';
-
 
 const socket = io('https://hand-cricket-be.onrender.com')
 function App() {
@@ -27,7 +25,8 @@ function App() {
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
-   const recorderRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  
   const [isRecording, setIsRecording] = useState(false);
 
   const [peerConnection, setPeerConnection] = useState(null);
@@ -144,47 +143,55 @@ function App() {
 
   }, []);
   
-// Start screen recording
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: { cursor: 'always' },
-        audio: true, // To capture system audio as well (if supported)
-      });
+const startRecording = async () => {
+  try {
+    // Request access to the entire screen.
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      video: true,
+      audio: true, // Optional: Include audio if needed.
+    });
 
-      recorderRef.current = new RecordRTC(stream, { type: 'video' });
-      recorderRef.current.startRecording();
-      setIsRecording(true);
+    // Assign the stream to the video element for preview
+    localVideoRef.current.srcObject = stream;
 
-      // Show preview during recording
-      videoRef.current.srcObject = stream;
-    } catch (error) {
-      console.error('Error starting screen recording:', error);
-    }
-  };
+    const recorder = new MediaRecorder(stream);
+    mediaRecorderRef.current = recorder;
+    const chunks = [];
 
-  // Stop recording and download video
-  const stopRecording = async () => {
-    if (recorderRef.current) {
-      await recorderRef.current.stopRecording();
-      const blob = recorderRef.current.getBlob();
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        chunks.push(event.data);
+      }
+    };
 
-      // Download the recorded video
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: 'video/webm' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
+      document.body.appendChild(a);
+      a.style = 'display: none';
       a.href = url;
-      a.download = 'recorded_screen.webm';
+      a.download = 'screen-recording.webm';
       a.click();
+      window.URL.revokeObjectURL(url);
 
-      // Reset video preview
-      videoRef.current.srcObject.getTracks().forEach(track => track.stop());
-      videoRef.current.srcObject = null;
+      // Stop all tracks after recording
+      stream.getTracks().forEach(track => track.stop());
+    };
 
-      setIsRecording(false);
-    }
-  };
-  
+    recorder.start();
+    setIsRecording(true);
+  } catch (error) {
+    console.error('Error starting screen recording:', error);
+  }
+};
 
+const stopRecording = () => {
+  if (mediaRecorderRef.current) {
+    mediaRecorderRef.current.stop();
+    setIsRecording(false);
+  }
+};
   
   const initializePeerConnection = async () => {
     try {
