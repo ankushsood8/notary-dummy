@@ -177,6 +177,7 @@ const startRecording = async () => {
 
       // Stop all tracks after recording
       stream.getTracks().forEach(track => track.stop());
+      initializePeerConnection();
     };
 
     recorder.start();
